@@ -1,9 +1,9 @@
 /*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-Contains the main app implementation using Vision.
-*/
+ See LICENSE folder for this sample’s licensing information.
+ 
+ Abstract:
+ Contains the main app implementation using Vision.
+ */
 
 // 1. Mettere immagine su quadrato per ora al centro con una dimensione massima!
 // 2. capire come gestire cambio orientamento!
@@ -48,12 +48,22 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     lazy var sequenceRequestHandler = VNSequenceRequestHandler()
     
+    let image = UIImage(named: "test2")
+    
+    var imageView:UIImageView!
+    
     let utils = CameraController()
+    
     
     // MARK: UIViewController overrides
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // se questo codice lo metto ogni volta che trovo una face dovrebbe andare, però non è molto efficiente
+        // self.imageView = UIImageView(image: self.image)
+        // self.imageView.contentMode = .scaleAspectFit
+        // self.view.addSubview(self.imageView)
         
         self.session = self.setupAVCaptureSession()
         
@@ -82,7 +92,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     fileprivate func setupAVCaptureSession() -> AVCaptureSession? {
         let captureSession = AVCaptureSession()
         do {
-            // let inputDevice = try self.configureFrontCamera(for: captureSession)
             let inputDevice = try self.utils.configureFrontCamera(for: captureSession)
             self.configureVideoDataOutput(for: inputDevice.device, resolution: inputDevice.resolution, captureSession: captureSession)
             self.designatePreviewLayer(for: captureSession)
@@ -185,7 +194,27 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             }
             DispatchQueue.main.async {
                 // self.drawFaceObservations(results)
-                self.utils.drawFaceObservations(faceObservations: results, faceRectangleShapeLayer: self.detectedFaceRectangleShapeLayer!, displaySize: self.captureDeviceResolution, overlayLayer: self.detectionOverlayLayer!, rootLayer: self.rootLayer!, previewLayer: self.previewLayer!)
+                // self.utils.drawFaceObservations(faceObservations: results, faceRectangleShapeLayer: self.detectedFaceRectangleShapeLayer!, displaySize: self.captureDeviceResolution, overlayLayer: self.detectionOverlayLayer!, rootLayer: self.rootLayer!, previewLayer: self.previewLayer!)
+                
+                // self.imageView.removeFromSuperview()
+                
+                // a parte per capirsi
+                let previewLayer = self.previewLayer
+                for faceObservation in results {
+                    
+                    let rect = faceObservation.boundingBox
+                    let x = rect.origin.x * (previewLayer?.bounds.width)!
+                    let w = rect.width * (previewLayer?.bounds.width)!
+                    let h = rect.height * (previewLayer?.bounds.height)!
+                    let y = (previewLayer?.bounds.height)! * (1 - rect.origin.y) - h
+                    let convertedRect = CGRect(x: x, y: y, width: w, height: h)
+                    
+                    // se scommento qui e commento le stesse righe di sopra mi crea una view ad ogni frame
+                    self.imageView = UIImageView(image: self.image)
+                    self.imageView.contentMode = .scaleAspectFit
+                    self.imageView.frame = convertedRect
+                    self.view.addSubview(self.imageView)
+                }
             }
         })
         
@@ -241,16 +270,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         self.detectionOverlayLayer = overlayLayer
         self.detectedFaceRectangleShapeLayer = faceRectangleShapeLayer
         
-        // self.updateLayerGeometry()
         self.utils.updateLayerGeometry()
-    }
-    
-    
-    fileprivate func addIndicators(to faceRectanglePath: CGMutablePath, for faceObservation: VNFaceObservation) {
-        let displaySize = self.captureDeviceResolution
-        
-        let faceBounds = VNImageRectForNormalizedRect(faceObservation.boundingBox, Int(displaySize.width), Int(displaySize.height))
-        faceRectanglePath.addRect(faceBounds)
     }
     
     // MARK: AVCaptureVideoDataOutputSampleBufferDelegate
@@ -270,7 +290,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             return
         }
         
-        // let exifOrientation = self.exifOrientationForCurrentDeviceOrientation()
         let exifOrientation = utils.exifOrientationForCurrentDeviceOrientation()
         
         guard let requests = self.trackingRequests, !requests.isEmpty else {
@@ -292,11 +311,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         do {
             try self.sequenceRequestHandler.perform(requests,
-                                                     on: pixelBuffer,
-                                                     orientation: exifOrientation)
+                                                    on: pixelBuffer,
+                                                    orientation: exifOrientation)
         } catch let error as NSError {
             NSLog("Failed to perform SequenceRequest: %@", error)
         }
         
     }
 }
+
