@@ -14,6 +14,9 @@ Contains the main app implementation using Vision.
 
 // e poi caricare un'immagine da sovrapporre a una feature
 
+// manca prendere la parte in cui aggiungo un'immagine e poi capire come aggiungerne di diverse in caso, senza crearne una diversa per ogni loop
+// né tenerne una sola di cui si aggiorna posizione
+
 
 import UIKit
 import AVKit
